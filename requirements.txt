@@ -1,5 +1,4 @@
-re
-progress
-bs4
-requests
-ip2geotools
+progress==1.5
+bs4==0.0.1
+requests==2.18.4
+ip2geotools==0.1.5
