@@ -9,6 +9,7 @@ from ip2geotools.databases.noncommercial import DbIpCity
 from sys import exit
 from random import choice
 from os import path as osPath
+from .filletAsync import *
 
 def argCheck(config):
     '''
@@ -365,16 +366,19 @@ def fil_connector(target,config):
     functions that are used to retrieve data. Some examples of this are downloading files, 
     retrieiving geoIP locations and other functions.
     '''
-
+    
     indexFound = {}
     indexFiles = []
     userAgent = {'User-Agent':'PhishFillet/v1.0'}
-
+    start = set()
     if config.randomUserAgent:
         userAgent = fil_randomAgent()
     
     try:
         for each in target.parentDirs:
+            start.add(each)
+
+            
             session = requests.Session()
             session.max_redirects = 3
             response = session.get(each, headers=userAgent, timeout=int(config.timeout))
@@ -411,20 +415,7 @@ def fil_connector(target,config):
                         continue
 
                      # Announce directory and launch function if config is set
-                    if i.string[-1:] == "/" and config.recursive:
-                        print("[r] Directory found: {}".format(i.string))
-                        rURL = each+"/"+i.string
-
-                        if config.output:
-                            try:
-                                out = fil_recursive(target, config, rURL)
-                                for every in out:
-                                    indexFiles.append(every)
-                            except Exception as e:
-                                print("[-] Error appending recursive output to indexFiles:\n{}".format(e))
-
-                        if config.output:
-                            fil_recursive(target, config, rURL)
+                    
 
                     # Cgi-bin gets special attention because its a highly valued target  
                     if 'cgi-bin' in i.string:
@@ -433,8 +424,8 @@ def fil_connector(target,config):
                         if not config.quiet and k.status_code == 200:
                             print("[!] {} appears to be open!".format(cgibin))
 
-                    if config.output:
-                        indexFiles.append(each+"/"+i.string)
+                
+                    indexFiles.append(each+"/"+i.string[1::])
                                
                     # If object is a file, and matches extension type in downloads
                     if i.string[-3:] in config.download:
@@ -452,7 +443,15 @@ def fil_connector(target,config):
 
                 if not config.quiet:
                     printLine(40)
-
+        newlinks = set()
+        if len(indexFiles) > 0:
+            for xx in indexFiles:
+                if xx.endswith("/"):
+                    newlinks.add(xx)
+                    print(xx)
+            fil_async(newlinks)
+            print("continue$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$")
+        
         # Return list to fil_output function
         if config.output:
             return indexFiles
