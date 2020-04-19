@@ -98,8 +98,8 @@ async def write_one(test, file: IO, url: str, *args, **kwargs) -> None:
     async with aiofiles.open(file, "a") as f:
         for p in res:
             if p.endswith("php"):
-
                 added.append([url, p])
+                test.downloads.append(p)
             await f.write(f"{p}\n")
 async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> None:
     """Crawl & write concurrently to `file` for multiple `urls`."""

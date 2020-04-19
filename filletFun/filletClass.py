@@ -14,7 +14,7 @@ class filletTarget():
     
     def __init__(self, parentDirs=[], parentString='', domain='',
     region='', country='', hosting='', ip='', url='', geoipEnabled=False, 
-    city='',protocol='', dfilename='', durl=''):
+    city='',protocol='', dfilename='', durl='', found= '', downloads=''):
 
         self.parentDirs = parentDirs
         self.parentString = parentString
@@ -28,6 +28,8 @@ class filletTarget():
         self.protocol = protocol
         self.dfilename = dfilename
         self.durl = durl
+        self.found = []
+        self.downloads = []
 
 
 
@@ -46,8 +48,10 @@ Country: {}\n \
 Region: {}\n \
 City: {}\n \
 Hosting: {}\n \
-IP: {}".format(self.url, self.protocol, self.domain, self.parentString, 
-        self.parentDirs, self.country, self.region, self.city, self.hosting, self.ip))
+IP: {}\n \
+Found: {}\n \
+Downloads: {}".format(self.url, self.protocol, self.domain, self.parentString, 
+        self.parentDirs, self.country, self.region, self.city, self.hosting, self.ip, self.found, self.downloads))
         print("="*25+"\n")
 
 
