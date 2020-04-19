@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import asyncio
 import re
 import sys
@@ -12,29 +10,60 @@ import aiohttp
 from aiohttp import ClientSession
 from sys import exit
 import pathlib
+import async_timeout
+import os
+from .filletClass import filletTarget
 
 
-added = set()
-
+added = []
+all_targets = []
 HREF_RE = re.compile(r'href="(.*?)"')
 
-async def fetch_html(url: str, session: ClientSession, **kwargs) -> str:
+async def download_coroutine(session, url):
+    basedir = url[0]
+    url = url[1]
+    print(url)
+    filename = os.path.basename(url)
+    fPath = str(basedir)+'/'+str(filename)
+    with async_timeout.timeout(10):
+        async with session.get(url) as response:
+            with open(fPath, 'a+') as f_handle:
+                while True:
+                    chunk = await response.content.read(1024)
+                    if not chunk:
+                        break
+                    f_handle.write(chunk)
+            return await response.release()
+
+async def download_main(urls):
+    #this will downlaod all files from desired file paths
+    #still need to add functionality for it group downloads to index url
+    async with aiohttp.ClientSession() as session:
+        for url in urls:
+
+            await download_coroutine(session, url)
+
+
+
+async def fetch_html(test, url: str, session: ClientSession,*args, **kwargs) -> str:
     """GET request wrapper to fetch page HTML.
 
     kwargs are passed to `session.request()`.
     """
-
     resp = await session.request(method="GET", url=url, **kwargs)
-    resp.raise_for_status()
+    if resp.raise_for_status():
+        del(test)
+    else:
+        all_targets.append(test)
     html = await resp.text()
     return html
 
-async def parse(url: str, session: ClientSession, **kwargs) -> set:
+async def parse(test, url: str, session: ClientSession,*args, **kwargs) -> set:
     """Find HREFs in the HTML of `url`."""
     found = set()
 
     try:
-        html = await fetch_html(url=url, session=session, **kwargs)
+        html = await fetch_html(test=test, url=url, session=session, **kwargs)
     except (
         aiohttp.ClientError,
         aiohttp.http_exceptions.HttpProcessingError,
@@ -46,54 +75,69 @@ async def parse(url: str, session: ClientSession, **kwargs) -> set:
         return found
     else:
         for link in HREF_RE.findall(html):
-            added.add(str(url+"/"+link))
+            link = str(url+"/"+link)
+
             try:
                 abslink = urllib.parse.urljoin(url, link)
             except (urllib.error.URLError, ValueError):
                 pass
             else:
-                found.add(abslink)
+                if abslink not in found and not abslink.endswith("css"):
+                    found.add(abslink)
+                  
+                    pass                
 
         return found
 
-async def write_one(file: IO, url: str, **kwargs) -> None:
-    """Write the found HREFs from `url` to `file`."""
-    res = await parse(url=url, **kwargs)
+async def write_one(test, file: IO, url: str, *args, **kwargs) -> None:
+    
+    res = await parse(test=test, url=url, **kwargs)
     if not res:
         return None
+    
     async with aiofiles.open(file, "a") as f:
         for p in res:
-            await f.write(f"{url}\t{p}\n")
+            if p.endswith("php"):
 
-async def bulk_crawl_and_write(file: IO, urls: set, **kwargs) -> None:
+                added.append([url, p])
+            await f.write(f"{p}\n")
+async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> None:
     """Crawl & write concurrently to `file` for multiple `urls`."""
     timeout = aiohttp.ClientTimeout(total=3)
-    print(type(urls))
-    print("round 2", urls)
     async with ClientSession(timeout=timeout) as session:
         tasks = []
         for url in urls:
+            target = filletTarget()
+            target.url = url
+            #very sloopy but was having circular importing errors so 
+            #im calling a function isn't yet defined and throws an error when called:
+
+            from .filletFun1 import fil_urlConstruct
+
+            fil_urlConstruct(target, config)
             tasks.append(
-                write_one(file=file, url=url, session=session, **kwargs)
+                write_one(test=target, file=file, url=url, session=session,**kwargs)
+
             )
         await asyncio.gather(*tasks)
-def fil_async(urls):
+
+
+
+def fil_async(urls, test):
     here = pathlib.Path(__file__).parent
-    
-    #with open(here.joinpath("urls.txt")) as infile:
-     #   urls = set(map(str.strip, infile))
-        
+
+   
     outpath = here.joinpath("foundurls.txt")
-    with open(outpath, "w") as outfile:
-        outfile.write("source_url\tparsed_url\n")
-    print(urls)
+
+    asyncio.run(bulk_crawl_and_write(file=outpath, urls=urls, config=test))
+    print("Found {}  Possible Targets".format(len(all_targets)))
+    for x in all_targets:
+        x.show()
+
     
-    asyncio.run(bulk_crawl_and_write(file=outpath, urls=urls))
-    print("$$$$$$$$$")
-    print(added)
 
-    #asyncio.run(bulk_crawl_and_write(file=outpath, urls=added))
-
+    #print("Starting Downlaods")
+    
+    #asyncio.run(download_main(added))
     print("Finshed")
-def test():
-    print("doffffffffffffffffne")
+

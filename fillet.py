@@ -2,8 +2,11 @@
 
 from sys import exit
 import os
-from filletFun import * 
+from filletFun.filletClass import *
+from filletFun.filletFun1 import fil_connector
+
 import time
+import argparse
 
 # All arg parameters are passed to class object, to be used by fil_connector()
 parser = argparse.ArgumentParser(description="Parse a list of URLs for Index directories")
@@ -50,11 +53,8 @@ if args.ddir:
     filConfig.ddir = args.ddir 
 
 # Ensure there are no conflicting arguments
-argCheck(filConfig)
 
 def main():
-    printTitle()
-    target = filletTarget()
     textfile = args.file
 
     if filConfig.exclusions:
@@ -63,48 +63,48 @@ def main():
         target.download = filConfig.download
 
     # Retrieve number of url lines
+    content = []
     with open(textfile, 'r') as f:
-        counting = []
-        for line in f:
-            counting.append(line)
-        
+        content = f.readlines()
+# you may also want to remove whitespace characters like `\n` at the end of each line
+        content = [x.strip() for x in content]
         # Return lines to config object
-        filConfig.numOfUrls = len(counting)
-
+        filConfig.numOfUrls = len(content)
 
     # Open textfile again to actually run.
-    with open(textfile, 'r') as f:
-         
-        if filConfig.quiet:
-            print("\n[ Searching {} urls ]".format(filConfig.numOfUrls))
-            bar = FillingSquaresBar('Filleting Phish', max = filConfig.numOfUrls)
-            print("\n")
+
+
+    if filConfig.quiet:
+        print("\n[ Searching {} urls ]".format(filConfig.numOfUrls))
+        bar = FillingSquaresBar('Filleting Phish', max = filConfig.numOfUrls)
+        print("\n")
+    
+    if filConfig.verbose:
+        filConfig.show()
+
+    for line in content:
         
-        if filConfig.verbose:
-            filConfig.show()
 
-        for line in f:
-            try:
-                if filConfig.quiet:
-                    bar.next()
-                # Pass URL to target class object
-                target.url = line
-                    
-                # Class object passed to urlConstruct to create attributes 
-                fil_urlConstruct(target, filConfig)
+        try:
+            if filConfig.quiet:
+                bar.next()
+            # Pass URL to target class object
+                
+            # Class object passed to urlConstruct to create attributes 
 
-                # Launch GeoIP Function
-                if filConfig.geoIpEnabled:
-                    fil_getGeoIP(target, filConfig) # Can this be placed inside connector?
-                
-                # If output selected collect return and place in output function
-                if filConfig.output:
-                    index = fil_connector(target, filConfig)
-                    fil_output(index, filConfig.output)
-                else:
-                    fil_connector(target, filConfig)
-                
-            except (KeyboardInterrupt, SystemExit):
+            # Launch GeoIP Function
+            if filConfig.geoIpEnabled:
+                fil_getGeoIP(target, filConfig) # Can this be placed inside connector?
+            
+            # If output selected collect return and place in output function
+            if filConfig.output:
+                index = fil_connector(target, filConfig)
+                fil_output(index, filConfig.output)
+            else:
+                fil_connector(filConfig, content)
+                print("done")
+            
+        except (KeyboardInterrupt, SystemExit):
 
                 print("\n\n\
 Goodbye!       ,-,\n\

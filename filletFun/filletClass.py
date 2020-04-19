@@ -1,6 +1,6 @@
 #!/usr/bin/python3 
 
-class filletTarget:
+class filletTarget():
     '''
     For each line in a url text file, the url is passed to the filletTarget object. 
     The url is analyzed, parsed, and sent to the class object's specified attributes.
@@ -29,21 +29,6 @@ class filletTarget:
         self.dfilename = dfilename
         self.durl = durl
 
-    def clearTarget(self):
-        '''Clear target will reset all object attributes back to null'''
-
-        self.parentDirs = []
-        self.parentString = ''
-        self.domain = ''
-        self.country = ''
-        self.region = ''
-        self.city = ''
-        self.hosting = ''
-        self.ip = ''
-        self.download = [] # Does this need to be reset?
-        self.url = ''
-        self.protocol = ''
-    
 
 
     def show(self):
