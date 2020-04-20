@@ -102,7 +102,7 @@ def main():
                 fil_output(index, filConfig.output)
             else:
                 fil_connector(filConfig, content)
-                print("done")
+                exit()
             
         except (KeyboardInterrupt, SystemExit):
 

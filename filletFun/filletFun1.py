@@ -365,17 +365,10 @@ def fil_connector(config, content):
     retrieiving geoIP locations and other functions.
     '''
     urls = content
-    print(urls)
-    indexFound = {}
     indexFiles = []
     userAgent = {'User-Agent':'PhishFillet/v1.0'}
+    printTitle()
     fil_async(urls, config)    
-    print("here")
-    exit()
-   
-    
-
-    print("done", indexFiles)
     return indexFiles
 
   

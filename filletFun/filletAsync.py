@@ -71,7 +71,6 @@ async def parse(test, url: str, session: ClientSession,*args, **kwargs) -> set:
        
         return found
     except Exception as e:
-        print("timeout")
         return found
     else:
         for link in HREF_RE.findall(html):
@@ -93,6 +92,7 @@ async def write_one(test, file: IO, url: str, *args, **kwargs) -> None:
     
     res = await parse(test=test, url=url, **kwargs)
     if not res:
+        del(test)
         return None
     
     async with aiofiles.open(file, "a") as f:
@@ -100,6 +100,10 @@ async def write_one(test, file: IO, url: str, *args, **kwargs) -> None:
             if p.endswith("php"):
                 added.append([url, p])
                 test.downloads.append(p)
+            else:
+                if p not in test.found:
+                    test.found.append(p)
+
             await f.write(f"{p}\n")
 async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> None:
     """Crawl & write concurrently to `file` for multiple `urls`."""
@@ -108,12 +112,12 @@ async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> Non
         tasks = []
         for url in urls:
             target = filletTarget()
+            
             target.url = url
             #very sloopy but was having circular importing errors so 
             #im calling a function isn't yet defined and throws an error when called:
 
             from .filletFun1 import fil_urlConstruct
-
             fil_urlConstruct(target, config)
             tasks.append(
                 write_one(test=target, file=file, url=url, session=session,**kwargs)
@@ -130,11 +134,12 @@ def fil_async(urls, test):
     outpath = here.joinpath("foundurls.txt")
 
     asyncio.run(bulk_crawl_and_write(file=outpath, urls=urls, config=test))
-    print("Found {}  Possible Targets".format(len(all_targets)))
-    for x in all_targets:
-        x.show()
+    print("{}/{} Targets Online".format(len(all_targets), test.numOfUrls))
+    from .filletFun1 import fil_getGeoIP
 
-    
+    for x in all_targets:
+        fil_getGeoIP(x, test)
+        x.show()
 
     #print("Starting Downlaods")
     
