@@ -88,13 +88,50 @@ async def parse(test, url: str, session: ClientSession,*args, **kwargs) -> set:
 
         return found
 
-async def write_one(test, file: IO, url: str, *args, **kwargs) -> None:
+async def write_one(tasks,test,file: IO, url: str,session: aiohttp.ClientSession, *args, **kwargs) -> None:
     
-    res = await parse(test=test, url=url, **kwargs)
+    res = await parse(test=test, url=url,session=session,**kwargs)
     if not res:
-        del(test)
         return None
+    else:
+        #This is where the "recursion" happening 
+        for pp in res:
+            try:
+                resp = await session.request('GET', url=pp, **kwargs)
+                if resp.raise_for_status():
+                    pass
+
+                else:
+                    html = await resp.text()
+
+                    for link in HREF_RE.findall(html):
+                        link = str(url+"/"+link)
+                        if link not in test.found:
+                            test.found.append(link)
+                        else:
+                            pass
+                        try:
+                            abslink = urllib.parse.urljoin(url, link)
+                        except (urllib.error.URLError, ValueError):
+                            pass
+                        else:
+                            if abslink not in found and not abslink.endswith("css"):
+                                found.add(abslink)
+                              
+                                pass                
+
+            except:
+                pass
+
     
+
+    '''
+        return None
+    for uu in res:
+       tasks.append(
+        write_one(tasks=tasks, test=test, file=file, url=url, session=session,**kwargs)
+
+    )'''
     async with aiofiles.open(file, "a") as f:
         for p in res:
             if p.endswith("php"):
@@ -111,6 +148,7 @@ async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> Non
     async with ClientSession(timeout=timeout) as session:
         tasks = []
         for url in urls:
+            #We are making the object then passing them in to task, which may be slower
             target = filletTarget()
             
             target.url = url
@@ -120,7 +158,7 @@ async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> Non
             from .filletFun1 import fil_urlConstruct
             fil_urlConstruct(target, config)
             tasks.append(
-                write_one(test=target, file=file, url=url, session=session,**kwargs)
+                write_one(tasks=tasks, test=target, file=file, url=url, session=session,**kwargs)
 
             )
         await asyncio.gather(*tasks)
@@ -135,13 +173,10 @@ def fil_async(urls, test):
 
     asyncio.run(bulk_crawl_and_write(file=outpath, urls=urls, config=test))
     print("{}/{} Targets Online".format(len(all_targets), test.numOfUrls))
-    from .filletFun1 import fil_getGeoIP
+    
 
     for x in all_targets:
-        fil_getGeoIP(x, test)
         x.show()
-
-    #print("Starting Downlaods")
     
     #asyncio.run(download_main(added))
     print("Finshed")

@@ -4,7 +4,6 @@ from progress.bar import FillingSquaresBar
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
 import requests
-from socket import gethostbyname
 from ip2geotools.databases.noncommercial import DbIpCity
 from sys import exit
 from random import choice
@@ -288,73 +287,6 @@ def fil_output(index, config):
                 f.write(i+"\n")
         except:
             pass
-
-
-
-def fil_recursive(target, config, url):
-    print("&&&&&&&&&&&&&&&&&&&&&&&&&&7", target.show())
-
-
-    '''
-    This function takes all directories found and loops through them 
-    to find addtional directories rather than just looping through the
-    folders found within the url path.
-    '''
-    print("rec")
-    userAgent = {'User-Agent':'PhishFilletwv1.0'}
-    throwAway = ['Name','Last modified','Size','Description','Parent Directory','../']
-    indexFiles = []
-
-    if config.randomUserAgent:
-        userAgent = fil_randomAgent()
-
-    if config.verbose:
-        print("[r] Searching directory: {}".format(url))
-    
-    try:
-        session = requests.Session()
-        session.max_redirects = 3
-        response = session.get(url, headers=userAgent, timeout=int(config.timeout))
-        r = response.content
-        s = BeautifulSoup(r,"html.parser")
-        title = s.find('title')
-        aTag = s.find_all('a')
-            
-        for i in aTag:
-
-            if i.string in throwAway:
-                continue
-                
-            print("[r] Object found: {}".format(i.string))
-
-            # Search for open cgi-bin folders. Typically where loot is found.
-            if 'cgi-bin' in i.string:
-                k = requests.get(url +"/"+i.string)
-
-                if not config.quiet and k.status_code == 200:
-                    print("[!] cgi-bin appears to be open!")
-                    
-            # The output may need to be rewritten. Consider writing output function 
-            # that appends a new line write each time as oppose to appending to a 
-            # list within memory. #TODO
-
-            indexFiles.append(url+"/"+i.string)
-                       
-            # If object is a file, and matches extension type in downloads
-            
-            if i.string[-3:] in config.download:
-                target.dfilename = i.string
-                target.durl = url +"/"+i.string
-                fil_download(target, config) 
-
-            if not config.quiet:
-                printLine(40)
-
-    except Exception as e:
-        print("[r] Error: " + str(e))
-
-    
-    return indexFiles
 
 
 
