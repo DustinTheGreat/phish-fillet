@@ -102,10 +102,11 @@ def main():
                 fil_output(index, filConfig.output)
             else:
                 fil_connector(filConfig, content)
+                print("heredddddddddddd")
                 exit()
             
         except (KeyboardInterrupt, SystemExit):
-
+                print("finished")
                 print("\n\n\
 Goodbye!       ,-,\n\
              ,/.(     __\n\

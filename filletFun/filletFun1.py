@@ -300,7 +300,10 @@ def fil_connector(config, content):
     indexFiles = []
     userAgent = {'User-Agent':'PhishFillet/v1.0'}
     printTitle()
-    fil_async(urls, config)    
+    try:
+        fil_async(urls, config)
+    except:
+        print("no")    
     return indexFiles
 
   
