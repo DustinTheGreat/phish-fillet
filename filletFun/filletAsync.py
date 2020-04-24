@@ -96,7 +96,7 @@ async def write_one(tasks,test,file: IO, url: str,session: aiohttp.ClientSession
         return None
     else:
         #This is where the "recursion" happenin
-
+        '''
         if len(res) <= 20:
             for pp in res:
                 try:
@@ -122,16 +122,16 @@ async def write_one(tasks,test,file: IO, url: str,session: aiohttp.ClientSession
                             pass
                 except:
                     pass
-
-        async with aiofiles.open(file, "a") as f:
-            for p in res:
-                if p.endswith("php"):
-                    added.append([url, p])
-                    test.downloads.append(p)
-                else:
-                    if p not in test.found:
-                        test.found.append(p)
-                await f.write(f"{p}\n")
+          '''
+            async with aiofiles.open(file, "a") as f:
+                for p in res:
+                    if p.endswith("php"):
+                        added.append([url, p])
+                        test.downloads.append(p)
+                    else:
+                        if p not in test.found:
+                            test.found.append(p)
+                    await f.write(f"{p}\n")
 
 
 async def bulk_crawl_and_write(file: IO, urls: set, config:str, **kwargs) -> None:
